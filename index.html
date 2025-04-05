@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Game</title>
+
+    <!-- External CSS Stylesheets -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #1d06ea;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        h1 {
+            color: #f0f500;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-header {
+            background-image: url('https://www.ancient-origins.net/sites/default/files/field/image/Tower-of-Babel.jpg');
+            height: 20vh;
+            background-size: cover;
+            text-align: center;
+            padding: 10vh 0;
+            color: #f0f500;
+        }
+
+        .game-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .instructions, .game {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            margin: 10px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            flex-grow: 1;
+        }
+
+        .btn-custom {
+            background-color: #ba189a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin: 10px;
+        }
+
+        .btn-custom:hover {
+            background-color: #45a049;
+        }
+
+        select, input {
+            padding: 5px;
+            margin: 10px;
+            font-size: 1rem;
+        }
+
+        #languageImage {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Add a responsive design for small screen sizes */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .game-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .game, .instructions {
+                width: 95%;
+                margin: 10px auto;
+            }
+
+            .btn-custom {
+                width: 100%;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-header">
+        <h2><em>Welcome to Vocab Voyage!</em></h2>
+    </div>
+
+    <h1>Studeamus!</h1>
+
+    <div class="instructions">
+        <h2>How to Play?</h2>
+        <ul>
+            <li>Choose your target language(s).</li>
+            <li>Use Study, Practice, or Travel actions to increase fluency.</li>
+            <li>Traveling boosts one language but reduces fluency in others!</li>
+            <li>Win by reaching 100% fluency in any language within 20 turns.</li>
+        </ul>
+    </div>
+
+    <div class="game">
+        <p><b>Energy:</b> <span id="energy">10</span>/10</p>
+        <p><b>Turn:</b> <span id="turn">0</span>/20</p>
+
+        <label>Select Language:
+            <select id="selectedLanguage"></select>
+        </label><br>
+
+        <button class="btn-custom" onclick="study()">Study 📚</button>
+        <button class="btn-custom" onclick="practice()">Practice ✏️</button>
+        <button class="btn-custom" onclick="travel()">Travel ✈️</button>
+        <button class="btn-custom" onclick="nextTurn()">Next Turn</button>
+
+        <p id="theme"></p>
+        <p id="status"></p>
+
+        <div id="fluencyDisplay"></div>
+        <div id="languageImage"></div>
+    </div>
+
+    <script>
+        const languages = {
+            "Spanish": 0,
+            "French": 0,
+            "German": 0,
+            "Japanese": 0
+        };
+
+        const travelThemes = {
+            "Spanish": ["Fiesta in Barcelona!", "Exploring Mayan Ruins!", "Beach Day in Ibiza!"],
+            "French": ["Wine Tasting in Bordeaux!", "Paris Fashion Tour!", "Exploring the Louvre!"],
+            "German": ["Oktoberfest in Munich!", "Berlin Techno Night!", "Castles of Bavaria!"],
+            "Japanese": ["Cherry Blossom Festival!", "Temple Visit in Kyoto!", "Anime Convention in Tokyo!"]
+        };
+
+        const languageImages = {
+            "Spanish": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQ2VKlanYYzYWO_aCrNkhaPq1x9W8W-86dxA&s",
+            "French": "https://images.fineartamerica.com/images/artworkimages/mediumlarge/1/cote-dazur-french-riviera-woman-on-the-beach-long-shot.jpg",
+            "German": "https://images.joseartgallery.com/84886/conversions/cityscapes-painting-thumb900.jpg",
+            "Japanese": "https://www.kcpinternational.com/wp-content/uploads/2011/07/Spring-in-Tokyo.jpg"
+        };
+
+        let energy = 10;
+        let turn = 0;
+
+        const energyCost = { study: 2, practice: 3, travel: 5 };
+
+        const languageSelect = document.getElementById("selectedLanguage");
+        for (let lang in languages) {
+            let option = document.createElement("option");
+            option.value = lang;
+            option.text = lang;
+            languageSelect.appendChild(option);
+        }
+
+        function updateUI() {
+            document.getElementById("energy").innerText = energy;
+            document.getElementById("turn").innerText = turn;
+
+            let fluencyHTML = '<h3>Fluency:</h3><ul>';
+            for (let lang in languages) {
+                fluencyHTML += `<li>${lang}: ${languages[lang].toFixed(1)}%</li>`;
+            }
+            fluencyHTML += '</ul>';
+
+            document.getElementById("fluencyDisplay").innerHTML = fluencyHTML;
+
+            const selectedLang = languageSelect.value;
+            const imageUrl = languageImages[selectedLang];
+            document.getElementById("languageImage").innerHTML = `<img src="${imageUrl}" alt="${selectedLang}" style="width: 100%; border-radius: 10px;">`;
+        }
+
+        function study() {
+            if (energy >= energyCost.study) {
+                let lang = languageSelect.value;
+                languages[lang] = Math.min(100, languages[lang] + 2 + Math.random() * 3);
+                energy -= energyCost.study;
+            } else {
+                alert("Not enough energy!");
+            }
+            updateUI();
+        }
+
+        function practice() {
+            if (energy >= energyCost.practice) {
+                let lang = languageSelect.value;
+                languages[lang] = Math.min(100, languages[lang] + 3 + Math.random() * 5);
+                energy -= energyCost.practice;
+            } else {
+                alert("Not enough energy!");
+            }
+            updateUI();
+        }
+
+        function travel() {
+            if (energy >= energyCost.travel) {
+                let targetLang = languageSelect.value;
+                languages[targetLang] = Math.min(100, languages[targetLang] + 7 + Math.random() * 5);
+
+                for (let lang in languages) {
+                    if (lang !== targetLang) {
+                        languages[lang] = Math.max(0, languages[lang] - (1 + Math.random() * 2));
+                    }
+                }
+
+                const themes = travelThemes[targetLang];
+                const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+                document.getElementById("theme").innerText = `Travel Event: ${randomTheme}`;
+
+                energy -= energyCost.travel;
+            } else {
+                alert("Not enough energy!");
+            }
+            updateUI();
+        }
+
+        function nextTurn() {
+            turn++;
+            energy = 10;
+
+            for (let lang in languages) {
+                if (languages[lang] >= 100) {
+                    alert(`You became fluent in ${lang}! You win!`);
+                    location.reload();
+                }
+            }
+
+            if (turn >= 20) {
+                alert("Game Over! Try again.");
+                location.reload();
+            }
+
+            document.getElementById("theme").innerText = "";
+
+            updateUI();
+        }
+
+        updateUI();
+    </script>
+
+</body>
+</html>
